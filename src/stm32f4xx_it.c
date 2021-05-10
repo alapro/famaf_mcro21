@@ -28,6 +28,7 @@
 /******************************************************************************/
 
 extern TIM_HandleTypeDef htim2;
+extern ADC_HandleTypeDef hadc1;
 /**
   * @brief  This function handles SysTick Handler, but only if no RTOS defines it.
   * @param  None
@@ -45,4 +46,15 @@ void SysTick_Handler(void)
 void TIM2_IRQHandler(void)
 {
 	HAL_TIM_IRQHandler(&htim2);
+}
+
+void ADC_IRQHandler(void)
+{
+  /* USER CODE BEGIN ADC_IRQn 0 */
+
+  /* USER CODE END ADC_IRQn 0 */
+  HAL_ADC_IRQHandler(&hadc1);
+  /* USER CODE BEGIN ADC_IRQn 1 */
+
+  /* USER CODE END ADC_IRQn 1 */
 }

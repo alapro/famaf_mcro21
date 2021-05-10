@@ -17,6 +17,8 @@ void LED_off(void *led);
 void LED_toggle(void *led);
 void LED_blinky(void *led, uint16_t ton, uint16_t toff, uint16_t times);
 
+float SENSTEMP_getTemperature(void);
+
 
 
 #endif /* BSP_H_ */

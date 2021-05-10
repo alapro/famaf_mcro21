@@ -16,6 +16,8 @@ void *ledBlue;
 void *ledOrange;
 void *ledGreen;
 
+float t;
+
 int main(void)
 {
 
@@ -25,6 +27,8 @@ int main(void)
 
 	while(1){
 
+		t = SENSTEMP_getTemperature();
+		t++;
 
 	}
 }

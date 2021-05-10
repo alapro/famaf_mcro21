@@ -24,13 +24,17 @@ GPIOLED_TypeDef gpio_ledOrange = {GPIOD, GPIO_PIN_13};
 GPIOLED_TypeDef gpio_ledGreen = {GPIOD, GPIO_PIN_12};
 
 TIM_HandleTypeDef htim2;
+ADC_HandleTypeDef hadc1;
 
 void *ledBlinky;
 uint16_t timesBlinky, tonBlinky, toffBlinky;
+uint16_t adcValue;
 
 
 void LED_Init(void);
 void TIM2_Init(void);
+void ADC1_Init(void);
+void Error_Handler(void);
 
 
 extern void App_1msPeriod(void);
@@ -43,6 +47,7 @@ void BSP_Init(void){
 
 	LED_Init();
 	TIM2_Init();
+	ADC1_Init();
 
 }
 
@@ -128,6 +133,22 @@ void LED_Init(void){
 	GPIO_InitStruct.Pin = gpio_ledGreen.pin;
 	HAL_GPIO_Init(gpio_ledGreen.port, &GPIO_InitStruct);
 	ledGreen = (void*)&gpio_ledGreen;
+}
+
+float SENSTEMP_getTemperature(void){
+
+	float temp, adVolt;
+	uint32_t adResult;
+
+	HAL_ADC_Start(&hadc1);
+	if (HAL_ADC_PollForConversion(&hadc1, 500) != HAL_OK)
+		return (0);
+	adResult = HAL_ADC_GetValue(&hadc1);
+	HAL_ADC_Stop(&hadc1);
+	adVolt = (float)adResult * 3000 / 4095;
+	temp = ((adVolt - 760) / 2.5) + 25;
+
+	return temp;
 }
 
 
@@ -272,16 +293,91 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* tim_baseHandle)
 }
 
 
-void Error_Handler(void)
+void ADC1_Init(void)
 {
-  /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
-	__disable_irq();
-  while (1)
+
+  /* USER CODE BEGIN ADC1_Init 0 */
+
+  /* USER CODE END ADC1_Init 0 */
+
+  ADC_ChannelConfTypeDef sConfig = {0};
+
+  /* USER CODE BEGIN ADC1_Init 1 */
+
+  /* USER CODE END ADC1_Init 1 */
+  /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
+  */
+  hadc1.Instance = ADC1;
+  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
+  hadc1.Init.Resolution = ADC_RESOLUTION_12B;
+  hadc1.Init.ScanConvMode = DISABLE;
+  hadc1.Init.ContinuousConvMode = DISABLE;
+  hadc1.Init.DiscontinuousConvMode = DISABLE;
+  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+  hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+  hadc1.Init.NbrOfConversion = 1;
+  hadc1.Init.DMAContinuousRequests = DISABLE;
+  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+  if (HAL_ADC_Init(&hadc1) != HAL_OK)
   {
+    Error_Handler();
   }
-  /* USER CODE END Error_Handler_Debug */
+  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+  */
+  sConfig.Channel = ADC_CHANNEL_TEMPSENSOR;
+  sConfig.Rank = 1;
+  sConfig.SamplingTime = ADC_SAMPLETIME_480CYCLES;
+  sConfig.Offset = 0;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN ADC1_Init 2 */
+
+  /* USER CODE END ADC1_Init 2 */
+
 }
+
+void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
+{
+
+  if(adcHandle->Instance==ADC1)
+  {
+  /* USER CODE BEGIN ADC1_MspInit 0 */
+
+  /* USER CODE END ADC1_MspInit 0 */
+    /* ADC1 clock enable */
+    __HAL_RCC_ADC1_CLK_ENABLE();
+
+    /* ADC1 interrupt Init */
+    HAL_NVIC_SetPriority(ADC_IRQn, 0, 2);
+    HAL_NVIC_EnableIRQ(ADC_IRQn);
+  /* USER CODE BEGIN ADC1_MspInit 1 */
+
+  /* USER CODE END ADC1_MspInit 1 */
+  }
+}
+
+void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
+{
+
+  if(adcHandle->Instance==ADC1)
+  {
+  /* USER CODE BEGIN ADC1_MspDeInit 0 */
+
+  /* USER CODE END ADC1_MspDeInit 0 */
+    /* Peripheral clock disable */
+    __HAL_RCC_ADC1_CLK_DISABLE();
+
+    /* ADC1 interrupt Deinit */
+    HAL_NVIC_DisableIRQ(ADC_IRQn);
+  /* USER CODE BEGIN ADC1_MspDeInit 1 */
+
+  /* USER CODE END ADC1_MspDeInit 1 */
+  }
+}
+
 
 
 ////////////////////// Interrupt CallBack Services ///////////////////////////////
@@ -296,6 +392,23 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 		App_1msPeriod();
     }
 
+}
+
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc){
+	if (hadc->Instance == ADC1) {
+		adcValue++;
+	}
+}
+
+void Error_Handler(void)
+{
+  /* USER CODE BEGIN Error_Handler_Debug */
+  /* User can add his own implementation to report the HAL error return state */
+	__disable_irq();
+  while (1)
+  {
+  }
+  /* USER CODE END Error_Handler_Debug */
 }
 
 
