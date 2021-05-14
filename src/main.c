@@ -17,32 +17,67 @@ void *ledOrange;
 void *ledGreen;
 
 float t;
+struct{
+	event_TypeDef Semaphore;
+	event_TypeDef Term;
+}event;
+
+struct{
+	smState_TypeDef Semaphore;
+	uint8_t Term;
+}smState;
+
+uint32_t semaphoreTimeOut;
+
+
 
 int main(void)
 {
 
 	BSP_Init();
 
-	LED_blinky(ledBlue, 100, 900, 10);
+	event.Semaphore = None;
+	event.Term = None;
 
 	while(1){
 
-		t = SENSTEMP_getTemperature();
-		t++;
+		if(event.Semaphore != None){
+			if (smState.Semaphore == Idle && event.Semaphore == SW_Press){
+				smState.Semaphore = Cycle1;
+				LED_blinky(ledRed, 500, 500, 6);
+				semaphoreTimeOut = 5000;
+			} else if (smState.Semaphore == Cycle1 && event.Semaphore == TimeOut){
+				smState.Semaphore = Cycle2;
+				LED_on(ledRed);
+				LED_off(ledBlue);
+				semaphoreTimeOut = 10000;
+			}
 
+			event.Semaphore = None;
+		}
+
+		if(event.Term != None){
+
+			t = SENSTEMP_getTemperature();
+
+			event.Term = None;
+		}
 	}
 }
 
 
 void App_1msPeriod(void){
-
-	static uint16_t cont = 1;
-
-	cont--;
-	if(!cont){
-		cont = 300;
-		LED_toggle(ledOrange);
+	if(semaphoreTimeOut){
+		semaphoreTimeOut--;
+		if(!semaphoreTimeOut){
+			event.Semaphore = TimeOut;
+		}
 	}
+
+}
+
+void SW_PressEvent(void){
+	event.Semaphore = SW_Press;
 }
 
 

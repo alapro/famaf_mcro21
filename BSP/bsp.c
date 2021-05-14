@@ -32,12 +32,14 @@ uint16_t adcValue;
 
 
 void LED_Init(void);
+void SW_Init(void);
 void TIM2_Init(void);
 void ADC1_Init(void);
 void Error_Handler(void);
 
 
 extern void App_1msPeriod(void);
+extern void SW_PressEvent(void);
 
 void BSP_Init(void){
 
@@ -46,9 +48,9 @@ void BSP_Init(void){
 	//SystemClock_Config();
 
 	LED_Init();
+	SW_Init();
 	TIM2_Init();
 	ADC1_Init();
-
 }
 
 
@@ -107,6 +109,23 @@ void LED_blinkyIRQ(void){
 	}
 }
 
+void SW_Init(void){
+
+	GPIO_InitTypeDef  GPIO_InitStruct;
+
+	__HAL_RCC_GPIOA_CLK_ENABLE();
+
+	/*Configure GPIO pin : PA0 */
+	GPIO_InitStruct.Pin = GPIO_PIN_0;
+	GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+	/* EXTI interrupt init*/
+	HAL_NVIC_SetPriority(EXTI0_IRQn, 0, 1);
+	HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+}
+
 
 void LED_Init(void){
 
@@ -137,7 +156,7 @@ void LED_Init(void){
 
 float SENSTEMP_getTemperature(void){
 
-	float temp, adVolt;
+	float temp, admVolt;
 	uint32_t adResult;
 
 	HAL_ADC_Start(&hadc1);
@@ -145,8 +164,8 @@ float SENSTEMP_getTemperature(void){
 		return (0);
 	adResult = HAL_ADC_GetValue(&hadc1);
 	HAL_ADC_Stop(&hadc1);
-	adVolt = (float)adResult * 3000 / 4095;
-	temp = ((adVolt - 760) / 2.5) + 25;
+	admVolt = (float)adResult * 3000 / 4095;
+	temp = ((admVolt - 760) / 2.5) + 25;
 
 	return temp;
 }
@@ -396,9 +415,16 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc){
 	if (hadc->Instance == ADC1) {
-		adcValue++;
+
 	}
 }
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
+	if (GPIO_Pin == GPIO_PIN_0){
+		SW_PressEvent();
+	}
+}
+
 
 void Error_Handler(void)
 {
