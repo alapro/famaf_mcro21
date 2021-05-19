@@ -20,6 +20,7 @@ float t;
 struct{
 	event_TypeDef Semaphore;
 	event_TypeDef Term;
+	event_TypeDef Console;
 }event;
 
 struct{
@@ -28,6 +29,7 @@ struct{
 }smState;
 
 uint32_t semaphoreTimeOut;
+uint8_t ConsoleMsg[100];
 
 
 
@@ -38,6 +40,7 @@ int main(void)
 
 	event.Semaphore = None;
 	event.Term = None;
+	event.Console = None;
 
 	while(1){
 
@@ -58,9 +61,18 @@ int main(void)
 
 		if(event.Term != None){
 
-			t = SENSTEMP_getTemperature();
+
 
 			event.Term = None;
+		}
+
+		if(event.Console){
+			if(event.Console == SW_Press){
+				t = SENSTEMP_getTemperature();
+				sprintf(ConsoleMsg, "Temperature is:%2.2f\r\n", t);
+				CONSOLE_SendMsg(ConsoleMsg, 22);
+			}
+			event.Console = None;
 		}
 	}
 }
@@ -78,6 +90,7 @@ void App_1msPeriod(void){
 
 void SW_PressEvent(void){
 	event.Semaphore = SW_Press;
+	event.Console = SW_Press;
 }
 
 

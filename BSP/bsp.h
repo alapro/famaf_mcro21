@@ -12,6 +12,8 @@
 
 void BSP_Init(void);
 
+void CONSOLE_SendMsg(uint8_t *pData, uint16_t Size);
+
 void LED_on(void *led);
 void LED_off(void *led);
 void LED_toggle(void *led);
